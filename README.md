@@ -108,10 +108,4 @@ Understanding the full call chain is part of the exercise — don't skip to the 
 
 ## Submission
 
-Create a branch named `bugfix/mixtape` for your fixes. Each bug fix should be its own commit using conventional format:
-
-```
-fix: correct Sunday boundary condition in streak reset logic
-```
-
-See the project brief for full submission requirements.
+<img width="765" height="100" alt="Pasted Graphic" src="https://github.com/user-attachments/assets/06c5bcac-a9bc-4baf-9424-1624624579a3" />
