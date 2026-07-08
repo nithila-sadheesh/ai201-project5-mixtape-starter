@@ -1,5 +1,20 @@
 # Project 5: Mixtape Bug Hunt — Submission
 
+## AI Usage
+
+I worked on this project with Claude Code (Anthropic's CLI agent) as a pair-programming tool. Specifically how I used it, and where I had to verify things myself:
+
+**What I asked it to explain, trace, or summarize:**
+- After reading `models.py` and the route files myself, I had it walk the call chain for the playlist-add flow (`POST /playlists/<id>/songs` → `add_to_playlist` → `create_notification`) to check my understanding of the data flow written up in the codebase map below.
+- For Issue #1, once I had narrowed the bug to the `elif days_since_last == 1 and today.weekday() != 6:` line, I asked what `datetime.weekday()` returns for each day of the week to confirm that 6 means Sunday (vs. `isoweekday()`, where Sunday is 7). That confirmed the guard was excluding Sundays from the increment branch.
+- For Issue #4, I gave it the two sibling functions (`add_to_playlist` and `rate_song`) and asked for a structural comparison. It confirmed the only meaningful difference was the missing `create_notification` call — not a transaction-ordering or commit issue.
+
+**What it helped me understand:** the SQLAlchemy association-table pattern (`playlist_entries` carrying `position`/`added_by` columns rather than being a plain join table), and why `streak_service` re-attaches `tzinfo=timezone.utc` to datetimes read back from SQLite.
+
+**Where AI was incomplete or verification mattered:**
+- The biggest case was Issue #3 (duplicate search results). The `outerjoin` to `song_tags` without `.distinct()` looks like an obvious duplicate-row bug, and an AI explanation of the query agreed it should duplicate multi-tag songs. But when I actually ran it — both the provided test (`test_search_no_duplicates_multi_tag_song`) and a hand-built reproduction — the duplicates never appeared at the API level, because SQLAlchemy 2.0's legacy `Query` deduplicates entity results after the join (the raw SQL does return 3 rows for a 3-tag song; the ORM collapses them). A plausible-sounding diagnosis was wrong for this environment, and only executing the code revealed it. That's why I swapped Issue #3 out for Issue #1, which I could actually reproduce and verify fixed.
+- For every fix, the diagnosis was confirmed by running code, not by explanation alone: failing tests before / passing tests after for #1 and #5, and a Python-shell reproduction for #4 (0 notifications before the fix; exactly 1 after, with no duplicate on re-rating and none on self-rating).
+
 ## Codebase Map
 
 ### Main files and what each one does
